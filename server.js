@@ -1,4 +1,7 @@
-// server.js
+console.log("ACCESS_TOKEN:", process.env.LINE_CHANNEL_ACCESS_TOKEN ? "OK" : "MISSING");
+console.log("CHANNEL_SECRET:", process.env.LINE_CHANNEL_SECRET ? "OK" : "MISSING");
+console.log("LIFF_ID:", process.env.LIFF_ID ? "OK" : "MISSING");
+
 const express = require("express");
 const line = require("@line/bot-sdk");
 const bodyParser = require("body-parser");
@@ -24,52 +27,29 @@ app.post("/webhook", line.middleware(config), async (req, res) => {
 const client = new line.Client(config);
 
 async function handleEvent(event) {
+  console.log("Received event:", JSON.stringify(event, null, 2));
+
   if (event.type === "message" && event.message.type === "text") {
     const userMessage = event.message.text;
+    console.log("User message:", userMessage);
 
-    // 若輸入包含「小程式」字樣 → 回傳 LIFF 開啟按鈕
-    if (userMessage.includes("小程式")) {
-      const message = {
-        type: "flex",
-        altText: "打開小程式",
-        contents: {
-          type: "bubble",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              { type: "text", text: "點下方按鈕開啟小程式" },
-              {
-                type: "button",
-                action: {
-                  type: "uri",
-                  label: "開啟",
-                  uri: `https://liff.line.me/${process.env.LIFF_ID}`
-                }
-              }
-            ]
-          }
-        }
-      };
-      return client.replyMessage(event.replyToken, message);
-    }
-
-    // 其他情況 → 回覆文字
+    // 先簡化回覆測試
     return client.replyMessage(event.replyToken, {
       type: "text",
-      text: `你說的是：「${userMessage}」`
-    });
+      text: `收到訊息: ${userMessage}`
+    }).catch(err => console.error("Reply error:", err));
   }
 
   if (event.type === "follow") {
     return client.replyMessage(event.replyToken, {
       type: "text",
       text: "哈囉～歡迎加我好友！試著輸入「小程式」看看 😃"
-    });
+    }).catch(err => console.error("Reply error:", err));
   }
 
   return Promise.resolve(null);
 }
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 LINE Bot running on port ${PORT}`));
